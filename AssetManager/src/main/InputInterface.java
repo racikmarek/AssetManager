@@ -1,10 +1,7 @@
 package main;
 
 import java.io.File;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
 import database.FileDB;
-import processing.InputProcessor;
 
 public class InputInterface {
 	private static final String flAddDirDB = "-A";
@@ -21,12 +18,8 @@ public class InputInterface {
 	private static final String flHelpDB = "-h";
 		
 	private FileDB db;
-	private InputProcessor inputProcessor;
-	private ArrayList<MenuPoint> menu;
 	
 	public InputInterface() {
-		this.inputProcessor = new InputProcessor();
-		this.menu = getMenuItems();
 	}
 	
 	private void prepareDB(String filePathDB) {
@@ -140,80 +133,6 @@ public class InputInterface {
 		if (switchFlag != null) {
 			processCommand(switchFlag, inputPath);
 		}
-		
-		db.rebuildPathsDB();
-		
-		/*
-		MenuPoint mp;
-		if (args.length > 0) {
-			mp = getMenuItemBySwitch(args[0]);
-			System.out.println(runFunction(mp, args));
-		}
-		else {
-			printMenu(menu);
-			//TODO get user input
-			BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-			try {
-				br.readLine();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-			return;
-		}
-		*/
-	}
-
-	private String runFunction(MenuPoint mp, String[] args) {
-		String result = null;
-		if (mp == null) {
-			System.out.println("Illegral option switch!");
-			return result;
-		}	
-		try {
-		  Class<?> c = inputProcessor.getClass();
-		  Method method = null;
-		  switch (mp.getArgumentCount()) {
-		    case 0: method = c.getDeclaredMethod(mp.getReferenceMethod()); 
-		    		result = (String) method.invoke(inputProcessor); break;
-		    case 1: method = c.getDeclaredMethod(mp.getReferenceMethod(), String.class); 
-		    		result = (String) method.invoke(inputProcessor, args[1]); break;
-		    case 2: method = c.getDeclaredMethod(mp.getReferenceMethod(), String.class, String.class); 
-		    		result = (String) method.invoke(inputProcessor, args[1], args[2]); break;
-		    case 3: method = c.getDeclaredMethod(mp.getReferenceMethod(), String.class, String.class, String.class); 
-		    		result = (String) method.invoke(inputProcessor, args[1], args[2], args[3]); break; 
-		  }
-		} catch (Exception e) { 
-			System.out.println("Something went wrong.");
-			e.printStackTrace();
-		}
-		return result;
-	}
-	
-	private ArrayList<MenuPoint> getMenuItems() {
-		ArrayList<MenuPoint> menu = new ArrayList<MenuPoint>();
-		menu.add(new MenuPoint("Check file", "-c", 1, "fromFile", "checkFile"));
-		menu.add(new MenuPoint("Check files in directory", "-cd", 1, "fromDir", "checkDir"));
-		menu.add(new MenuPoint("Add file", "-a", 2, "fromFile, toDir", "addFile"));
-		menu.add(new MenuPoint("Add files from directory", "-ad", 2, "fromDir, toDir", "addDir"));
-		menu.add(new MenuPoint("Collect web tmblrs", "-ct", 2, "addr, toDir", "collectTumblr"));
-		return menu;
-	}
-	
-	private void printMenu(ArrayList<MenuPoint> menu) {
-		System.out.println("Menu:");
-		for (MenuPoint m: menu) {
-			System.out.println("  " + m.getId() + ". " + m.getName() + 
-							   "  [" + m.getSwitchPattern() + "]  [" + m.getDesciption() + "]");
-		}
-	}
-	
-	private MenuPoint getMenuItemBySwitch(String switchOpt) {
-		for (MenuPoint p: menu) {
-			if (p.getSwitchPattern().equals(switchOpt)) {
-				return p;
-			}
-		}
-		return null;
 	}
 	
 }
