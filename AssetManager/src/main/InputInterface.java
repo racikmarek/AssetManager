@@ -18,6 +18,7 @@ public class InputInterface {
 	private static final String flRefreshDirDB = "-c";
 	private static final String flRebuildPathsDB = "-b";
 	private static final String flFindDupsDB = "-d";
+	private static final String flHelpDB = "-h";
 		
 	private FileDB db;
 	private InputProcessor inputProcessor;
@@ -109,7 +110,9 @@ public class InputInterface {
 				System.out.println(db.getResult());
 				System.out.println(db.getDBstatus());
 			}
-			
+			break;
+		case flHelpDB:
+			System.out.println("Help: not implemented yet");
 			break;
 		default: 
 			System.out.println("Incorrect command on input.");
