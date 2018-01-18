@@ -56,16 +56,22 @@ public class InputInterface {
 			System.out.println(db.getDBstatus());
 			break;
 		case flExistsFileDB: 
-			System.out.println("Not implemented yet.");
+			db.existsFileDB(inputPath);
+			db.save();
+			System.out.println(db.getResult());
+			System.out.println(db.getDBstatus());
 			break;
 		case flExistsDirDB: 
-			System.out.println("Not implemented yet.");
+			db.existsFilesDirDB(inputPath);
+			db.save();
+			System.out.println(db.getResult());
+			System.out.println(db.getDBstatus());
 			break;
 		case flStatusDB: 
 			System.out.println(db.getDBstatus());
 			break;
 		case flPrintDB: 
-			System.out.println("Not implemented yet.");
+			System.out.println(db);
 			break;
 		case flRemoveFileDB:
 			db.removeFileDB(inputPath);

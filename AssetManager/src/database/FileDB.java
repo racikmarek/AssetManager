@@ -73,12 +73,36 @@ public class FileDB extends FileRecord implements Serializable {
     	File f = new File(filePath);
     	if (f.exists() && !f.isDirectory()) {
     		String hash = calculateHash(filePath);
+    		this.appliedFiles.add(records.get(hash).getPath());
     		return records.containsKey(hash);
     	}
     	else {
-    		//System.out.println("Requested file does not exist / not a file.");
+    		this.ommitedFiles.add(records.get(hash).getPath());
     	}
     	return false;
+    }
+    
+    public void existsFilesDirDB(String path) {
+    	clearResult();
+    	existsFilesDirDBloc(path);
+    }
+    
+    public void existsFilesDirDBloc(String path) {
+    	File inF = new File(path);
+    	if (inF.exists() && inF.isDirectory()) {
+    		File[] files = inF.listFiles();
+    		for (File f: files) {
+    			if (f.isDirectory()) {
+    				existsFilesDirDBloc(f.getAbsolutePath());
+    			}
+    			else {
+    				existsFileDBloc(f.getAbsolutePath());
+    			}
+    		}
+    	}
+    	else {
+    		this.skippedFiles.add(path);
+    	}
     }
     
     public void removeDirDB(String path) {
@@ -215,13 +239,23 @@ public class FileDB extends FileRecord implements Serializable {
     	}
     }
     
-    public String searchFile(HashSet<String> directories, String hash) {
+    private String searchFile(String directory, String hash) {
     	//TODO
     	try {
 			throw new Exception();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+    	return null;
+    }
+    
+    public String searchFile(HashSet<String> directories, String hash) {
+    	for (String dir: directories) {
+    		String newPath = searchFile(dir, hash);
+    		if (newPath != null) {
+    			return newPath;
+    		}
+    	}
     	return null;
     }
     
@@ -316,6 +350,17 @@ public class FileDB extends FileRecord implements Serializable {
     	out += "-----------------------" + eol;
     	out += "File count: " + records.size();
     	return out;
+    }
+    
+    @Override
+    public String toString() {
+    	String result = "";
+    	for (String hash: records.keySet()) {
+    		String path = records.get(hash).getPath();
+    		result += hash + " -> ";
+    		result += path + eol;
+    	}
+    	return result;
     }
     
 }
