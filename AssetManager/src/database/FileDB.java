@@ -41,6 +41,8 @@ public class FileDB extends FileRecord implements Serializable {
 	    	loadedDB = (FileDB) ois.readObject();
 	    	ois.close();
 	    	fis.close();
+	    	File f = new File(filePath);
+	    	loadedDB.path = f.getAbsolutePath();
 	    	System.out.println("DB file loaded.");
 		} catch (IOException | ClassNotFoundException e) {
 			System.out.println("Failed to load DB file.");
@@ -52,12 +54,26 @@ public class FileDB extends FileRecord implements Serializable {
     public void save() {
     	try {
     		String filePath = getPath();
-			FileOutputStream fos = new FileOutputStream(filePath);
-			ObjectOutputStream oos = new ObjectOutputStream(fos);
-			oos.writeObject(this);
-			oos.close();
-			fos.close();
-			System.out.println("DB file saved.");
+    		File f = new File(filePath);
+    		if (f.exists() && !f.isDirectory()) {
+    			FileOutputStream fos = new FileOutputStream(filePath);
+    			ObjectOutputStream oos = new ObjectOutputStream(fos);
+    			oos.writeObject(this);
+    			oos.close();
+    			fos.close();
+    			System.out.println("DB file saved.");
+    		}
+    		else if (!f.exists() && !f.isDirectory()) {
+    			FileOutputStream fos = new FileOutputStream(filePath);
+    			ObjectOutputStream oos = new ObjectOutputStream(fos);
+    			oos.writeObject(this);
+    			oos.close();
+    			fos.close();
+    			System.out.println("DB file created");
+    		}
+    		else {
+    			System.out.println("Failed to save DB file.");
+    		}
 		} catch (IOException e) {
 			System.out.println("Failed to save DB file.");
 			e.printStackTrace();
@@ -73,11 +89,17 @@ public class FileDB extends FileRecord implements Serializable {
     	File f = new File(filePath);
     	if (f.exists() && !f.isDirectory()) {
     		String hash = calculateHash(filePath);
-    		this.appliedFiles.add(records.get(hash).getPath());
-    		return records.containsKey(hash);
+    		if (records.containsKey(hash)) {
+        		this.appliedFiles.add(f.getAbsolutePath());
+        		return true;
+    		}
+    		else {
+    			this.ommitedFiles.add(f.getAbsolutePath());
+        		return false;
+    		}
     	}
     	else {
-    		this.ommitedFiles.add(records.get(hash).getPath());
+    		this.skippedFiles.add(records.get(hash).getPath());
     	}
     	return false;
     }
@@ -136,17 +158,17 @@ public class FileDB extends FileRecord implements Serializable {
     public void removeFileDBloc(String filePath) {
     	File f = new File(filePath);
     	if (f.exists() && !f.isDirectory()) {
-    		String hash = calculateHash(filePath);
+    		String hash = calculateHash(f.getAbsolutePath());
     		if (records.containsKey(hash)) {
     			records.remove(hash);
-    			this.appliedFiles.add(filePath);
+    			this.appliedFiles.add(f.getAbsolutePath());
     		}
     		else {
-    			this.ommitedFiles.add(filePath);
+    			this.ommitedFiles.add(f.getAbsolutePath());
     		}
     	}
     	else {
-    		this.skippedFiles.add(filePath);
+    		this.skippedFiles.add(f.getAbsolutePath());
     	}
     }
     
@@ -160,16 +182,16 @@ public class FileDB extends FileRecord implements Serializable {
     	if (f.exists() && !f.isDirectory()) {
     		String hash = calculateHash(filePath);
     		if (!records.containsKey(hash)) {
-    			FileRecord rec = new FileRecord(filePath, hash);
+    			FileRecord rec = new FileRecord(f.getAbsolutePath(), hash);
         		records.put(hash, rec);
-        		this.appliedFiles.add(filePath);
+        		this.appliedFiles.add(f.getAbsolutePath());
     		}
     		else {
-    			this.ommitedFiles.add(filePath);
+    			this.ommitedFiles.add(f.getAbsolutePath());
     		}
     	}
     	else {
-    		this.skippedFiles.add(filePath);
+    		this.skippedFiles.add(f.getAbsolutePath());
     	}
     }
     
@@ -196,23 +218,49 @@ public class FileDB extends FileRecord implements Serializable {
     	}
     }
     
-    public void cleanupDirDB(String path) {
-    	clearResult();
-    	FileDB db = new FileDB(path);
-    	db.addDirectory2DB(path);
-    	HashSet<String> toRemove = new HashSet<>();
-    	for (String hash: records.keySet()) {
-    		if (!db.records.containsKey(hash)) {
-    			this.appliedFiles.add(records.get(hash).getPath());
-    			toRemove.add(hash);
-    		}
-    		else {
-    			this.ommitedFiles.add(records.get(hash).getPath());
-    		}
-    	}
-    	for (String hash: toRemove) {
-    		records.remove(hash);
-    	}
+    public void refreshDirDB() {
+		clearResult();
+		HashSet<String> msd = getMostShallowDirectories(getAllDirs());
+		HashMap<String, FileRecord> oldRecords = new HashMap<String, FileRecord>(records);
+		records.clear();
+		for (String dir: msd) {
+	    	addDirectory2DB(dir);
+		}
+		clearResult();
+		for (String oldKey: oldRecords.keySet()) {
+			String oldDir = oldRecords.get(oldKey).getPath();
+			String newDir = "";
+			if (records.containsKey(oldKey)) {
+				newDir = records.get(oldKey).getPath();
+			}
+			if (records.containsKey(oldKey) && oldDir.equals(newDir)) {
+				this.ommitedFiles.add(newDir);
+			}
+			else if (records.containsKey(oldKey) && !oldDir.equals(newDir)) {
+				this.appliedFiles.add("Renamed: " + oldDir + " -> " + newDir);
+			}
+			else if (!records.containsKey(oldKey)) {
+				this.appliedFiles.add("Deleted: " + oldDir);
+			}
+		}
+		for (String newKey: records.keySet()) {
+			String oldDir = "";
+			if (oldRecords.containsKey(newKey)) {
+				oldDir = oldRecords.get(newKey).getPath();
+			}
+			String newDir = records.get(newKey).getPath();
+			if (oldRecords.containsKey(newKey) && oldDir.equals(newDir)) {
+				//do not log - logged previously
+				//this.ommitedFiles.add(newDir);
+			}
+			else if (oldRecords.containsKey(newKey) && !oldDir.equals(newDir)) {
+				//do not log - logged previously
+				//this.appliedFiles.add("Renamed: " + oldDir + " -> " + newDir);
+			}
+			else if (!oldRecords.containsKey(newKey)) {
+				this.appliedFiles.add("New: " + newDir);
+			}
+		}
     }
     
     private boolean isPrefix(String s, HashSet<String> dirs) {
@@ -226,10 +274,13 @@ public class FileDB extends FileRecord implements Serializable {
     
     public HashSet<String> getMostShallowDirectories(HashSet<String> dirs) {
     	HashSet<String> newDirs = new HashSet<>();
+    	HashSet<String> tmpDirs = new HashSet<>(dirs);
     	for (String dir: dirs) {
-    		if (!isPrefix(dir, newDirs)) {
+    		tmpDirs.remove(dir);
+    		if (isPrefix(dir, tmpDirs) || tmpDirs.isEmpty()) {
     			newDirs.add(dir);
     		}
+    		tmpDirs.add(dir);
     	}
     	if (dirs.size() == newDirs.size()) {
     		return newDirs;
@@ -240,13 +291,25 @@ public class FileDB extends FileRecord implements Serializable {
     }
     
     private String searchFile(String directory, String hash) {
-    	//TODO
-    	try {
-			throw new Exception();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-    	return null;
+    	String res = null;
+    	File inF = new File(directory);
+    	if (inF.exists() && inF.isDirectory()) {
+    		File[] files = inF.listFiles();
+    		for (File f: files) {
+    			if (res != null) {
+    				return res;
+    			}
+    			if (f.isDirectory()) {
+    				res = searchFile(f.getAbsolutePath(), hash);
+    			}
+    			else {
+    				if (calculateHash(f.getAbsolutePath()).equals(hash)) {
+    					res = f.getAbsolutePath();
+    				}
+    			}
+    		}
+    	}
+    	return res;
     }
     
     public String searchFile(HashSet<String> directories, String hash) {
@@ -267,7 +330,22 @@ public class FileDB extends FileRecord implements Serializable {
     	return result;
     }
     
+    private boolean isHashMatchingPath(String hash) {
+    	if (!records.containsKey(hash)) {
+    		return false;
+    	}
+    	FileRecord fr = records.get(hash);
+    	String recPath = fr.getPath();
+    	File f = new File(recPath);
+    	if (!f.exists() || f.isDirectory()) {
+    		return false;
+    	}
+    	String fileHash = calculateHash(recPath);
+    	return fileHash.equals(hash);
+    }
+    
 	public void rebuildPathsDB() {
+		clearResult();
 		HashSet<String> msd = getMostShallowDirectories(getAllDirs());
     	for (String hash: records.keySet()) {
     		FileRecord rec = records.get(hash);
@@ -300,6 +378,45 @@ public class FileDB extends FileRecord implements Serializable {
     		}
     	}
 	}
+	
+	public void findDupsDB() {
+		clearResult();
+		HashSet<String> msd = getMostShallowDirectories(getAllDirs());
+		for (String dir: msd) {
+			findDupsDB(dir);
+		}
+	}
+	
+	public void findDupsDB(String directory) {
+		clearResult();
+		findDupsDBloc(directory);
+	}
+	
+	private void findDupsDBloc(String directory) {
+		File inF = new File(directory);
+    	if (inF.exists() && inF.isDirectory()) {
+    		File[] files = inF.listFiles();
+    		for (File f: files) {
+    			if (f.isDirectory()) {
+    				findDupsDBloc(f.getAbsolutePath());
+    			}
+    			else {
+    				String hash = calculateHash(f.getAbsolutePath());
+    				if (records.containsKey(hash) && isHashMatchingPath(hash) &&
+    					!records.get(hash).getPath().equals(f.getAbsolutePath())) 
+    				{
+    					this.appliedFiles.add(f.getAbsolutePath());
+    				}
+    				else {
+    					this.ommitedFiles.add(f.getAbsolutePath());
+    				}
+    			}
+    		}
+    	}
+    	else {
+    		this.skippedFiles.add(inF.getAbsolutePath());
+    	}
+	}
     
     public HashSet<String> getFileHashesDB(String path) {
     	return (HashSet<String>) records.keySet();
@@ -312,7 +429,7 @@ public class FileDB extends FileRecord implements Serializable {
 	    	byte[] output = MessageDigest.getInstance("MD5").digest(input);
 	    	return DatatypeConverter.printHexBinary(output);
 		} catch (IOException | NoSuchAlgorithmException e) {
-			System.out.println("Failed to make hash: " + eol + path );
+			System.out.println("Failed to make hash: " + eol + path);
 			return "";
 		}
     }

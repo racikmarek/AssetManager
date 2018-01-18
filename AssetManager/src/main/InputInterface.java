@@ -7,16 +7,17 @@ import database.FileDB;
 import processing.InputProcessor;
 
 public class InputInterface {
-	private static final String flAddDirDB = "-d";
-	private static final String flAddFileDB = "-f";
+	private static final String flAddDirDB = "-A";
+	private static final String flAddFileDB = "-a";
 	private static final String flExistsFileDB = "-e";
 	private static final String flExistsDirDB = "-E";
 	private static final String flStatusDB = "-s";
 	private static final String flPrintDB = "-p";
 	private static final String flRemoveFileDB = "-r";
 	private static final String flRemoveDirDB = "-R";
-	private static final String flCleanupDirDB = "-c";
+	private static final String flRefreshDirDB = "-c";
 	private static final String flRebuildPathsDB = "-b";
+	private static final String flFindDupsDB = "-d";
 		
 	private FileDB db;
 	private InputProcessor inputProcessor;
@@ -30,10 +31,10 @@ public class InputInterface {
 	private void prepareDB(String filePathDB) {
 		File dbF = new File(filePathDB);
     	if (dbF.exists() && !dbF.isDirectory()) {
-    		db = FileDB.load(filePathDB);
+    		db = FileDB.load(dbF.getAbsolutePath());
     	}
     	else if (!dbF.isDirectory()) {
-    		db = new FileDB(filePathDB);
+    		db = new FileDB(dbF.getAbsolutePath());
     		db.save();
     	}
     	else {
@@ -85,8 +86,8 @@ public class InputInterface {
 			System.out.println(db.getResult());
 			System.out.println(db.getDBstatus());
 			break;
-		case flCleanupDirDB:
-			db.cleanupDirDB(inputPath);
+		case flRefreshDirDB:
+			db.refreshDirDB();
 			db.save();
 			System.out.println(db.getResult());
 			System.out.println(db.getDBstatus());
@@ -96,6 +97,19 @@ public class InputInterface {
 			db.save();
 			System.out.println(db.getResult());
 			System.out.println(db.getDBstatus());
+			break;
+		case flFindDupsDB:
+			if (inputPath != null) {
+				db.findDupsDB(inputPath);
+				System.out.println(db.getResult());
+				System.out.println(db.getDBstatus());
+			}
+			else {
+				db.findDupsDB();
+				System.out.println(db.getResult());
+				System.out.println(db.getDBstatus());
+			}
+			
 			break;
 		default: 
 			System.out.println("Incorrect command on input.");
@@ -117,11 +131,14 @@ public class InputInterface {
 		}
 		if (filePathDB == null) {
 			System.out.println("Please define DB file location.");
+			return;
 		}
 		prepareDB(filePathDB);
 		if (switchFlag != null) {
 			processCommand(switchFlag, inputPath);
 		}
+		
+		db.rebuildPathsDB();
 		
 		/*
 		MenuPoint mp;
