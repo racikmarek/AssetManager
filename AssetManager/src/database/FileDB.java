@@ -179,6 +179,11 @@ public class FileDB extends FileRecord implements Serializable {
     
     public void addFile2DBloc(String filePath) {
     	File f = new File(filePath);
+    	double mbSize = (f.length() / 1024) / 1024;
+    	if (mbSize > 10) {
+    		this.skippedFiles.add("Too big: " + f.getAbsolutePath());
+    	}
+    	System.out.println("DB size: " + records.size());
     	if (f.exists() && !f.isDirectory()) {
     		String hash = calculateHash(filePath);
     		if (!records.containsKey(hash)) {
