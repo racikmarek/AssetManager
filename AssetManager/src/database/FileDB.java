@@ -179,6 +179,7 @@ public class FileDB extends FileRecord implements Serializable {
     }
     
     public void addFile2DBloc(String filePath) {
+    	System.out.println("Current DB size: " + records.size());
     	File f = new File(filePath);
     	if (f.exists() && !f.isDirectory()) {
     		String hash = calculateHash(filePath);
