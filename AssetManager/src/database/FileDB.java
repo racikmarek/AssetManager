@@ -448,7 +448,7 @@ public class FileDB extends FileRecord implements Serializable {
     }
     
     public String getResult() {
-    	String result = "";
+    	String result = ""; 
     	result += "---------------------------------------------------" + eol;
     	result += "Action applied for these files: (" + this.appliedFiles.size() + ")" + eol;
     	for (String filePath: this.appliedFiles) {
