@@ -19,6 +19,7 @@ import javax.xml.bind.DatatypeConverter;
 public class FileDB extends FileRecord implements Serializable {
 	private static final long serialVersionUID = -2417985372526925516L;
 	private static String eol = "\n";
+	private static final double maxHashFileSizeMB = 15;
     private HashMap<String, FileRecord> records;
     private HashSet<String> appliedFiles; //processed
     private HashSet<String> ommitedFiles; //not processed due to correct logic
@@ -424,7 +425,13 @@ public class FileDB extends FileRecord implements Serializable {
     
     private static String calculateHash(String filePath) {
     	Path path = Paths.get(filePath);    	
-		try {
+    	try {
+    		File f = new File(filePath);
+        	//if the file exceeds certain size, use precise file size as identification (pseudo hash)
+    		double mbSize = (f.length() / 1024) / 1024;
+        	if (mbSize > maxHashFileSizeMB) {
+        		return String.valueOf(f.length());
+        	}
 			byte[] input = Files.readAllBytes(path);
 	    	byte[] output = MessageDigest.getInstance("MD5").digest(input);
 	    	return DatatypeConverter.printHexBinary(output);
