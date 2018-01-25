@@ -447,7 +447,7 @@ public class FileDB extends FileRecord implements Serializable {
     	this.skippedFiles.clear();
     }
     
-    public String getResult() {
+    public String getResult() { 
     	String result = ""; 
     	result += "---------------------------------------------------" + eol;
     	result += "Action applied for these files: (" + this.appliedFiles.size() + ")" + eol;
