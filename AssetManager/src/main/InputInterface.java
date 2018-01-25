@@ -87,7 +87,7 @@ public class InputInterface {
 			System.out.println(db.getDBstatus());
 			break;
 		case flRebuildPathsDB:
-			db.rebuildPathsDB();
+			//db.rebuildPathsDB();
 			db.save();
 			System.out.println(db.getResult());
 			System.out.println(db.getDBstatus());
@@ -99,7 +99,7 @@ public class InputInterface {
 				System.out.println(db.getDBstatus());
 			}
 			else {
-				db.findDupsDB();
+				//db.findDupsDB();
 				System.out.println(db.getResult());
 				System.out.println(db.getDBstatus());
 			}

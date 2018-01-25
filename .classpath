@@ -2,5 +2,6 @@
 <classpath>
 	<classpathentry kind="src" path="AssetManager/src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="libs/fast-md5-2.7.1.zip"/>
 	<classpathentry kind="output" path="AssetManager/bin"/>
 </classpath>
